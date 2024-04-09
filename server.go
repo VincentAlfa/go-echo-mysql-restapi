@@ -3,11 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"go-echo-restApi/database"
 	"net/http"
-	"os"
+
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type Post struct {
@@ -22,16 +23,8 @@ type Posts struct {
 
 func main() {
 	app := echo.New()
-	err := godotenv.Load()
-	if err != nil {
-		panic(err.Error())
-	}
 
-	host := os.Getenv("DB_HOST")
-	password := os.Getenv("DB_PASSWORD")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	database := os.Getenv("DB_NAME")
+	user, password, host, port, database := database.DbSourceName()
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, database))
 	if err != nil {
@@ -39,6 +32,8 @@ func main() {
 	}
 	defer db.Close()
 	
+	app.Use(middleware.CORS())
+
 	app.GET("/post", func(c echo.Context) error {
 		row, err := db.Query("SELECT id, title, content FROM Post")
 		if err != nil {
